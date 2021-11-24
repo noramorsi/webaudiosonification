@@ -22,7 +22,7 @@
   let nextNoteTime = 0.0; // when the next note is due.
 
   function nextNote() {
-    nextNoteTime += 1; // Add beat length to last beat time
+    nextNoteTime += 0.5; // Add beat length to last beat time
   }
 
   const notesInQueue = [];
@@ -39,15 +39,14 @@
   function scheduler() {
     // while there are notes that will need to play before the next interval, schedule them and advance the pointer.
     while (currNote < colData.length && nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
-      scheduleNote(nextNoteTime, colData[currNote]);
-      nextNote();
-      console.log("next???");
-      currNote++;
-      console.log(currNote);
+      scheduleNote(nextNoteTime, colData[currNote]); // play the corresponding note
+      nextNote(); // advance when the next note is due
+      currNote++; // advance the current note
     }
     timerID = window.setTimeout(scheduler, lookahead);
   }
 
+  // Checks state of audio; if it is now playing, plays tones accordingly.
   function checkAudio() {
     isPlaying = !isPlaying;
 
@@ -57,7 +56,7 @@
         audioContext.resume();
       }
       nextNoteTime = audioContext.currentTime;
-      scheduler(); // kick off scheduling
+      scheduler(); // kick off scheduling starting at current time
     } else {
       window.clearTimeout(timerID);
     }
@@ -76,7 +75,7 @@
     function handleForm(event) {
       event.preventDefault();
       btn.disabled = false;
-      printData();
+      printData(); // You can play audio now that we have data!
     }
     form.addEventListener('submit', handleForm);
   }
@@ -135,9 +134,8 @@
     form.append(submit);
   }
 
-  // Currently prints the data of the selected column.
+  // Scales the data of the column chosen and saves it to colData for audio usage later.
   function printData() {
-    audioContext.resume();
     let res = document.querySelector('input[name="columns"]:checked').value;
     let data = [];
     for (let currLine of lines) {
