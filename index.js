@@ -3,10 +3,13 @@
 (function() {
 
   // used to store lines of the file read
-  var lines;
+  let lines;
 
   // track button state
   let isPlaying = false;
+
+  // save data from selected col
+  let colData = [];
 
   // run init when the page loads
   window.addEventListener("load", init);
@@ -24,19 +27,23 @@
 
   const notesInQueue = [];
 
-  function scheduleNote(time) {
+  function scheduleNote(time, note) {
     // push the note on the queue, even if we're not playing.
-    notesInQueue.push({ note: 0, time: time });
-    playPulse(time, 440);
+    notesInQueue.push({ note: note, time: time });
+    playPulse(time, note);
   }
 
   let timerID;
+  let currNote = 0;
   // Schedules the next notes to play.
   function scheduler() {
     // while there are notes that will need to play before the next interval, schedule them and advance the pointer.
-    while (nextNoteTime < audioContext.currentTime + scheduleAheadTime ) {
-      scheduleNote(nextNoteTime);
+    while (currNote < colData.length && nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+      scheduleNote(nextNoteTime, colData[currNote]);
       nextNote();
+      console.log("next???");
+      currNote++;
+      console.log(currNote);
     }
     timerID = window.setTimeout(scheduler, lookahead);
   }
@@ -137,8 +144,15 @@
       let currArr = currLine.split(',');
       data.push(currArr[res]);
     }
-    console.log(data);
-    // need to do something with the data...
+    data.shift();
+    colData = [];
+    for (let i of data) {
+      colData.push(scale(i, Math.min(...data), Math.max(...data), 220, 1000));
+    }
+  }
+
+  function scale(number, inMin, inMax, outMin, outMax) {
+    return (number - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
   }
 
 })();
