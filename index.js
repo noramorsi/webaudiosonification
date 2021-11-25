@@ -29,7 +29,7 @@
 
   function scheduleNote(time, note) {
     // push the note on the queue, even if we're not playing.
-    notesInQueue.push({ note: note, time: time });
+    notesInQueue.push({ note: note, time: time }); // @NORA: remove this line
     playPulse(time, note);
   }
 
@@ -38,12 +38,12 @@
   // Schedules the next notes to play.
   function scheduler() {
     // while there are notes that will need to play before the next interval, schedule them and advance the pointer.
-    while (currNote < colData.length && nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+    while (currNote < colData.length && nextNoteTime < audioContext.currentTime + scheduleAheadTime) { // @NORA: remove second condition
       scheduleNote(nextNoteTime, colData[currNote]); // play the corresponding note
       nextNote(); // advance when the next note is due
       currNote++; // advance the current note
     }
-    timerID = window.setTimeout(scheduler, lookahead);
+    timerID = window.setTimeout(scheduler, lookahead); // @NORA: remove this line to see
   }
 
   // Checks state of audio; if it is now playing, plays tones accordingly.
@@ -86,9 +86,11 @@
     osc.type = 'sine';
     osc.frequency.value = pulseHz;
 
+    // @NORA: remove this or test it
     let amp = audioContext.createGain();
     amp.gain.value = 1;
 
+    // @NORA: remove this or test it
     let lfo = audioContext.createOscillator();
     lfo.type = 'square';
     lfo.frequency.value = 0;
