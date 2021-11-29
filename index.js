@@ -17,33 +17,21 @@
 
   // audio values
   const pulseTime = 0.5; // how long the tone should go for
-  const lookahead = 25.0; // how frequently to call scheduling function (in milliseconds)
-  const scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
+  const scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec); affects how fast pausing reacts
   let nextNoteTime = 0.0; // when the next note is due.
-
-  function nextNote() {
-    nextNoteTime += 0.5; // Add beat length to last beat time
-  }
-
-  const notesInQueue = [];
-
-  function scheduleNote(time, note) {
-    // push the note on the queue, even if we're not playing.
-    notesInQueue.push({ note: note, time: time }); // @NORA: remove this line
-    playPulse(time, note);
-  }
 
   let timerID;
   let currNote = 0;
   // Schedules the next notes to play.
   function scheduler() {
     // while there are notes that will need to play before the next interval, schedule them and advance the pointer.
-    while (currNote < colData.length && nextNoteTime < audioContext.currentTime + scheduleAheadTime) { // @NORA: remove second condition
-      scheduleNote(nextNoteTime, colData[currNote]); // play the corresponding note
-      nextNote(); // advance when the next note is due
+    while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+      playPulse(nextNoteTime, colData[currNote]); // play the corresponding note
+      nextNoteTime += pulseTime;
       currNote++; // advance the current note
     }
-    timerID = window.setTimeout(scheduler, lookahead); // @NORA: remove this line to see
+    // schedules next note after this pulse should be done playing (after pulseTime)
+    timerID = window.setTimeout(scheduler, pulseTime);
   }
 
   // Checks state of audio; if it is now playing, plays tones accordingly.
@@ -58,7 +46,7 @@
       nextNoteTime = audioContext.currentTime;
       scheduler(); // kick off scheduling starting at current time
     } else {
-      window.clearTimeout(timerID);
+      window.clearTimeout(timerID); // stops the next tone that's scheduled from playing
     }
   }
 
@@ -80,25 +68,31 @@
     form.addEventListener('submit', handleForm);
   }
 
+  let prevFreq = -1;
   // Plays the pulse at the given time, at the given frequency.
   function playPulse(time, pulseHz) {
+    console.log("in method");
     let osc = audioContext.createOscillator();
     osc.type = 'sine';
-    osc.frequency.value = pulseHz;
+    if (prevFreq == -1) { // no previous pulse played
+      osc.frequency.value = pulseHz;
+    } else { // start at previous pulse
+      osc.frequency.value = prevFreq;
+    }
 
-    // @NORA: remove this or test it
+    // currently using when trying to transition between oscillators
     let amp = audioContext.createGain();
     amp.gain.value = 1;
-
-    // @NORA: remove this or test it
-    let lfo = audioContext.createOscillator();
-    lfo.type = 'square';
-    lfo.frequency.value = 0;
-
-    lfo.connect(amp.gain);
+    console.log(time);
+    console.log(time + pulseTime);
     osc.connect(amp).connect(audioContext.destination);
-    lfo.start();
     osc.start(time);
+    // transition to next pulse sound
+    osc.frequency.exponentialRampToValueAtTime(pulseHz, time + pulseTime);
+    // update prev frequency
+    prevFreq = pulseHz;
+    // make the audio fade out before stopping to remove the clicking sound!
+    amp.gain.setTargetAtTime(0, time + pulseTime, 0.0001);
     osc.stop(time + pulseTime);
   }
 
